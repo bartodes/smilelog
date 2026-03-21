@@ -1,0 +1,42 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+
+Table patients as p {
+  id int [pk]
+  name text [not null]
+  last_name text
+  email text [unique]
+  telephone_number text [unique]
+  is_active bool [not null, default: true]
+
+  checks {
+    `email IS NOT NULL OR telephone_number IS NOT NULL` [name: 'check_null_email_or_telephone_number']
+  }
+}
+
+Enum appointmentStatus{
+  "CREATED"
+  "CONFIRMED"
+  "CANCELED"
+  "NO_SHOW"
+}
+
+Table appointments as a {
+  id int [pk]
+  patient_id int [not null, ref: > p.id]
+  status appointmentStatus [not null,default: "CREATED"]
+  created_on text [not null] // datetime
+  scheduled_for text [not null] // datetime
+  
+  indexes {
+    scheduled_for
+    (patient_id, scheduled_for)
+  }
+}
+
+Table visits as v {
+  id int [pk]
+  appointment_id int [unique, not null, ref: - a.id]
+  created_on text [not null] // datetime
+  notes text
+}
