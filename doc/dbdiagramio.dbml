@@ -27,6 +27,7 @@ Table appointments as a {
   status appointmentStatus [not null,default: "CREATED"]
   created_on text [not null] // datetime
   scheduled_for text [not null] // datetime
+  duration text [not null, default: "1h"] // time
   
   indexes {
     scheduled_for
