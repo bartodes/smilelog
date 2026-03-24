@@ -10,7 +10,7 @@ import (
 
 const dbName string = "smilelog"
 
-func CreateDb() {
+func OpenDb() {
 	db, err := sql.Open("sqlite3", fmt.Sprintf("./%s.db", dbName))
 
 	if err != nil {
@@ -23,6 +23,4 @@ func CreateDb() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Printf("Database %s.db created successfully!", dbName)
 }

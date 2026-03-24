@@ -8,7 +8,6 @@ CREATE TABLE  IF NOT EXISTS "patients" (
 	"last_name" TEXT,
 	"email" TEXT UNIQUE,
 	"telephone_number" TEXT UNIQUE,
-	"is_active" INTEGER NOT NULL DEFAULT 1,
 	CONSTRAINT "check_null_email_or_telephone_number" CHECK (email IS NOT NULL OR telephone_number IS NOT NULL)
 );
 
@@ -35,7 +34,7 @@ CREATE TABLE IF NOT EXISTS "visits" (
 	FOREIGN KEY (appointment_id) REFERENCES appointments(id)
 );
 
-CREATE INDEX "idx_appointment_scheduled" ON "appointments" ("scheduled_for");
+CREATE INDEX IF NOT EXISTS "idx_appointment_scheduled" ON "appointments" ("scheduled_for");
 
-CREATE INDEX "idx_comp_appointment_patient" ON "appointments" ("patient_id", "scheduled_for");
+CREATE INDEX IF NOT EXISTS "idx_comp_appointment_patient" ON "appointments" ("patient_id", "scheduled_for");
 `
