@@ -3,8 +3,9 @@
 
 Table patients as p {
   id INTEGER [pk]
+  document_id INTEGER [not null, unique]
   name TEXT [not null]
-  last_name TEXT
+  full_name TEXT
   email TEXT [unique]
   telephone_number TEXT [unique]
 
@@ -25,7 +26,6 @@ Table appointments as a {
   id INTEGER [pk]
   patient_id INTEGER [not null, ref: > p.id]
   status appointmentStatus [not null,default: "CREATED"]
-  created_on TEXT [not null] // datetime
   scheduled_for TEXT [not null] // datetime
   duration TEXT [not null, default: "1h"] // time
   
@@ -38,6 +38,5 @@ Table appointments as a {
 Table visits as v {
   id INTEGER [pk]
   appointment_id INTEGER [unique, not null, ref: - a.id]
-  created_on TEXT [not null] // datetime
   notes TEXT
 }
