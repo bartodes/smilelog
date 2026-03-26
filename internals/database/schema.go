@@ -7,8 +7,8 @@ var tableSchema = []string{
 		"name" TEXT NOT NULL,
 		"last_name" TEXT,
 		"email" TEXT UNIQUE,
-		"telephone_number" TEXT UNIQUE,
-		CONSTRAINT "check_null_email_or_telephone_number" CHECK (email IS NOT NULL OR telephone_number IS NOT NULL)
+		"phone_number" TEXT UNIQUE,
+		CONSTRAINT "check_null_email_or_telephone_number" CHECK (email IS NOT NULL OR phone_number IS NOT NULL)
 	);`,
 	"PRAGMA foreign_keys = ON;",
 	`CREATE TABLE IF NOT EXISTS "appointments" (
@@ -18,7 +18,6 @@ var tableSchema = []string{
 			NOT NULL 
 			DEFAULT 'CREATED' 
 			CHECK (status in ('CREATED','CONFIRMED','CANCELED','NO_SHOW')),
-		"created_on" TEXT NOT NULL,
 		"scheduled_for" TEXT NOT NULL,
 		"duration" TEXT NOT NULL DEFAULT '1h',
 		FOREIGN KEY (patient_id) REFERENCES patients(id)
@@ -26,7 +25,6 @@ var tableSchema = []string{
 	`CREATE TABLE IF NOT EXISTS "visits" ( 
 		"id" INTEGER PRIMARY KEY AUTOINCREMENT,
 		"appointment_id" INTEGER UNIQUE NOT NULL,
-		"created_on" TEXT NOT NULL,
 		"notes" TEXT,
 		FOREIGN KEY (appointment_id) REFERENCES appointments(id)
 	);`,

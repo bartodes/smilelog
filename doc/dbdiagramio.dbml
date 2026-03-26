@@ -5,16 +5,15 @@ Table patients as p {
   id INTEGER [pk]
   document_id INTEGER [not null, unique]
   name TEXT [not null]
-  full_name TEXT
+  last_name TEXT
   email TEXT [unique]
-  telephone_number TEXT [unique]
+  phone_number TEXT [unique]
 
   checks {
-    `email IS NOT NULL OR telephone_number IS NOT NULL` [name: 'check_null_email_or_telephone_number']
+    `email IS NOT NULL OR phone_number IS NOT NULL` [name: 'check_null_email_or_telephone_number']
   }
 }
 
-// Sqlite3 doesnt support Enums -> Instead we'll use Check Contraint
 Enum appointmentStatus{
   "CREATED"
   "CONFIRMED"
