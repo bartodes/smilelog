@@ -1,13 +1,11 @@
-package models
+package services
 
 import (
 	"database/sql"
-	"fmt"
 )
 
 type Patient struct {
-	Id          uint
-	DocumentId  uint
+	ID          int64
 	Name        string
 	LastName    string
 	Email       string
@@ -15,32 +13,42 @@ type Patient struct {
 }
 
 func CreatePatient(p Patient, db *sql.DB) (Patient, error) {
-
 	query := `
-	INSERT INTO patients (document_id, name, last_name, email, phone_number) 
-	VALUES (?,?,?,?,?)
+	INSERT INTO patients (name, last_name, email, phone_number) 
+	VALUES (?,?,?,?)
 	RETURNING id;`
 
-	res, err := db.Exec(
+	err := db.QueryRow(
 		query,
-		p.DocumentId,
 		p.Name,
 		p.LastName,
 		p.Email,
 		p.PhoneNumber,
-	)
-	if err != nil {
-		return p, fmt.Errorf("insert error: %w", err)
-	}
+	).Scan(&p.ID)
 
-	id, err := res.LastInsertId()
 	if err != nil {
-		return p, fmt.Errorf("result error: %w", err)
+		return Patient{}, err
 	}
-
-	p.Id = uint(id)
 
 	return p, nil
 }
 
-func (p Patient) GetPatientAppointments() {}
+func GetPatient(id int64, db *sql.DB) (Patient, error) {
+	query := `SELECT id, name, last_name, email, phone_number FROM patients WHERE id = ?`
+
+	var p Patient
+
+	err := db.QueryRow(query, id).Scan(
+		&p.ID,
+		&p.Name,
+		&p.LastName,
+		&p.Email,
+		&p.PhoneNumber,
+	)
+
+	if err != nil {
+		return Patient{}, err
+	}
+
+	return p, nil
+}
