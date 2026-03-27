@@ -11,19 +11,30 @@ import (
 
 const DB_NAME string = "smilelog"
 
-func InitDb() {
-	db_path := getDbPath()
-	db := openDb(db_path)
-	defer db.Close()
+func InitDb(db_path string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", db_path)
 
-	ok := tableExists(db, "patients")
+	if err != nil {
+		return db, fmt.Errorf("error opening database: %w", err)
+	}
+
+	ok, err := tableExists(db, "patients")
+
+	if err != nil {
+		return db, err
+	}
 
 	if !ok {
-		execDbSchema(db)
+		err = createTables(db)
+		if err != nil {
+			return db, fmt.Errorf("error creating tables: %w", err)
+		}
 	}
+
+	return db, nil
 }
 
-func getDbPath() string {
+func GetDbPath() string {
 	base_path, err := os.Getwd()
 
 	if err != nil {
@@ -33,22 +44,7 @@ func getDbPath() string {
 	return fmt.Sprintf("%s/%s.db", base_path, DB_NAME)
 }
 
-func openDb(db_path string) *sql.DB {
-	db, err := sql.Open("sqlite3", db_path)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = db.Ping()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return db
-}
-
-func tableExists(db *sql.DB, table_name string) bool {
+func tableExists(db *sql.DB, table_name string) (bool, error) {
 	query := "SELECT count(*) FROM sqlite_master WHERE type='table' AND name=?"
 
 	row := db.QueryRow(query, table_name)
@@ -57,16 +53,16 @@ func tableExists(db *sql.DB, table_name string) bool {
 	err := row.Scan(&count)
 
 	if err != nil {
-		log.Fatal(err)
+		return false, err
 	}
 
-	return count > 0
+	return count > 0, nil
 }
 
-func execDbSchema(db *sql.DB) {
+func createTables(db *sql.DB) error {
 	tx, err := db.Begin()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	defer tx.Rollback()
@@ -74,12 +70,14 @@ func execDbSchema(db *sql.DB) {
 	for _, query := range tableSchema {
 		_, err := tx.Exec(query)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+
+	return nil
 }
