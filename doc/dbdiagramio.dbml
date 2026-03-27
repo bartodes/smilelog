@@ -3,7 +3,6 @@
 
 Table patients as p {
   id INTEGER [pk]
-  document_id INTEGER [not null, unique]
   name TEXT [not null]
   last_name TEXT
   email TEXT [unique]
