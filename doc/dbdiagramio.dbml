@@ -3,6 +3,7 @@
 
 Table patients as p {
   id INTEGER [pk]
+  document_id INTEGER [not null, unique]
   name TEXT [not null]
   last_name TEXT
   email TEXT [unique]
@@ -24,8 +25,8 @@ Table appointments as a {
   id INTEGER [pk]
   patient_id INTEGER [not null, ref: > p.id]
   status appointmentStatus [not null,default: "CREATED"]
-  scheduled_for TEXT [not null] // datetime
-  duration TEXT [not null, default: "1h"] // time
+  scheduled_for TEXT [not null] // ISO8601 datetime
+  duration_minutes INTEGER [not null, default: "60"]
   
   indexes {
     scheduled_for
