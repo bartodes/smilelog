@@ -13,8 +13,7 @@ type Patient struct {
 }
 
 func CreatePatient(p Patient, db *sql.DB) (Patient, error) {
-	query := `
-	INSERT INTO patients (name, last_name, email, phone_number) 
+	query := `INSERT INTO patients (name, last_name, email, phone_number) 
 	VALUES (?,?,?,?)
 	RETURNING id;`
 
@@ -34,10 +33,9 @@ func CreatePatient(p Patient, db *sql.DB) (Patient, error) {
 }
 
 func GetPatient(id int64, db *sql.DB) (Patient, error) {
-	query := `SELECT id, name, last_name, email, phone_number FROM patients WHERE id = ?`
+	query := `SELECT id, name, last_name, email, phone_number FROM patients WHERE id = ?;`
 
 	var p Patient
-
 	err := db.QueryRow(query, id).Scan(
 		&p.ID,
 		&p.Name,
@@ -51,4 +49,39 @@ func GetPatient(id int64, db *sql.DB) (Patient, error) {
 	}
 
 	return p, nil
+}
+
+func ListPatients(db *sql.DB) ([]Patient, error) {
+	query := `SELECT id, name, last_name, email, phone_number FROM patients;`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var patients []Patient
+	for rows.Next() {
+		var p Patient
+
+		err := rows.Scan(
+			&p.ID,
+			&p.Name,
+			&p.LastName,
+			&p.Email,
+			&p.PhoneNumber,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		patients = append(patients, p)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return patients, nil
 }
