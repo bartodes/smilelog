@@ -16,8 +16,8 @@ type Appointment struct {
 func CreateAppointment(a Appointment, patientId int64, db *sql.DB) (Appointment, error) {
 	query := `INSERT INTO appointments (patient_id, status, scheduled_for, durations_minutes)
 	VALUES(?,?,?,?)
-	RETURNING id;
-	`
+	RETURNING id;`
+
 	err := db.QueryRow(
 		query,
 		a.PatientID,
@@ -35,7 +35,7 @@ func CreateAppointment(a Appointment, patientId int64, db *sql.DB) (Appointment,
 
 // Implement with optional parameter filter by schedule time (making use of the composite index)
 func GetAppointment(id int64, db *sql.DB) (Appointment, error) {
-	query := `SELECT id, patient_id, status, scheduled_for, durationMinutes FROM appointments WHERE id = ?;`
+	query := `SELECT id, patient_id, status, scheduled_for, duration_minutes FROM appointments WHERE id = ?;`
 
 	var a Appointment
 	err := db.QueryRow(query, id).Scan(
@@ -56,7 +56,36 @@ func GetAppointment(id int64, db *sql.DB) (Appointment, error) {
 // status -> 'CREATED','CONFIRMED','CANCELED','NO_SHOW'
 // Create new idx!
 func ListAppointmentsByStatus(status string, db *sql.DB) ([]Appointment, error) {
+	query := `SELECT id, patient_id, status, scheduled_for, duration_minutes FROM appointments WHERE status = ?;`
+
+	rows, err := db.Query(query, status)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
 	var appointments []Appointment
+
+	for rows.Next() {
+		var a Appointment
+
+		rows.Scan(
+			&a.ID,
+			&a.PatientID,
+			&a.Status,
+			&a.ScheduledFor,
+			&a.DurationMinutes,
+		)
+
+		appointments = append(appointments, a)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return appointments, nil
 }
 
