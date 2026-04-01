@@ -43,8 +43,3 @@ func GetVisit(appointmentId int64, db *sql.DB) (Visit, error) {
 
 	return v, nil
 }
-
-func ListVisits(db *sql.DB) ([]Visit, error) {
-	var visits []Visit
-	return visits, nil
-}
