@@ -92,6 +92,70 @@ func ListAppointmentsByStatus(status string, db *sql.DB) ([]Appointment, error) 
 // schedule
 // make default range 1 month: if only start is provided the rage will be = start + 1 month in time.Time
 func ListAppointmentsByScheduleRange(start time.Time, end time.Time, db *sql.DB) ([]Appointment, error) {
+	query := `SELECT id, patient_id, status, scheduled_for, duration_minutes FROM appointments 
+	WHERE scheduled_for >= ? AND scheduled_for <= ?;`
+
+	rows, err := db.Query(query, start, end)
+	if err != nil {
+		return nil, err
+	}
+
 	var appointments []Appointment
+	for rows.Next() {
+
+		var a Appointment
+		rows.Scan(
+			&a.ID,
+			&a.PatientID,
+			&a.Status,
+			&a.ScheduledFor,
+			&a.DurationMinutes,
+		)
+
+		appointments = append(appointments, a)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return appointments, nil
+}
+
+// JOIN
+// Patient -> Appointments + Visits
+func ListVisitsByPatients(patientId int64, db *sql.DB) ([]Visit, error) {
+	query := `
+	SELECT 
+		v.id,
+		v.appointment_id,
+		v.notes
+	FROM visits v
+	INNER JOIN appointments a 
+		ON v.appointment_id = a.id
+	WHERE a.patient_id = ?;`
+
+	rows, err := db.Query(query, patientId)
+	if err != nil {
+		return nil, err
+	}
+
+	var visits []Visit
+
+	for rows.Next() {
+		var v Visit
+		rows.Scan(
+			&v.ID,
+			&v.AppointmentId,
+			&v.Notes,
+		)
+
+		visits = append(visits, v)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return visits, nil
 }
