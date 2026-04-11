@@ -11,41 +11,38 @@ import (
 
 const DB_NAME string = "smilelog"
 
-func InitDb(db_path string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", db_path)
-
-	if err != nil {
-		return db, fmt.Errorf("error opening database: %w", err)
-	}
-
-	ok, err := tableExists(db, "patients")
-
-	if err != nil {
-		return db, err
-	}
-
-	if !ok {
-		err = createTables(db)
-		if err != nil {
-			return db, fmt.Errorf("error creating tables: %w", err)
-		}
-	}
-
-	return db, nil
-}
-
-func GetDbPath() string {
-	base_path, err := os.Getwd()
+func InitDB() *sql.DB {
+	basePath, err := os.Getwd()
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return fmt.Sprintf("%s/%s.db", base_path, DB_NAME)
+	dbPath := fmt.Sprintf("%s/%s.db", basePath, DB_NAME)
+	db, err := sql.Open("sqlite3", dbPath)
+
+	if err != nil {
+		log.Fatalf("error opening database: %v", err)
+	}
+
+	ok, err := tableExists(db, "patients")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if !ok {
+		err = createTables(db)
+		if err != nil {
+			log.Fatalf("error creating tables: %v", err)
+		}
+	}
+
+	return db
 }
 
 func tableExists(db *sql.DB, table_name string) (bool, error) {
-	query := "SELECT count(*) FROM sqlite_master WHERE type='table' AND name=?"
+	query := "SELECT count(*) FROM sqlite_master WHERE type='table' AND name=?;"
 
 	row := db.QueryRow(query, table_name)
 

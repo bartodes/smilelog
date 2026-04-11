@@ -17,7 +17,7 @@ var tableSchema = []string{
 		"status" TEXT 
 			NOT NULL 
 			DEFAULT 'CREATED' 
-			CHECK (status in ('CREATED','CONFIRMED','CANCELED','NO_SHOW')),
+			CHECK (status in ('CREATED','COMPLETED','CANCELED','NO_SHOW')),
 		"scheduled_for" TEXT NOT NULL,
 		"duration_minutes" INTEGER NOT NULL DEFAULT '60',
 		FOREIGN KEY (patient_id) REFERENCES patients(id)
