@@ -8,9 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type App struct {
-	DB *sql.DB
-}
+var db *sql.DB
 
 var rootCmd = &cobra.Command{
 	Use:   "smilelog",
@@ -22,7 +20,7 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	db := database.InitDB()
+	db = database.InitDB()
 	defer db.Close()
 
 	if err := rootCmd.Execute(); err != nil {
