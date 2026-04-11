@@ -1,10 +1,16 @@
 package cmd
 
 import (
-	"fmt"
+	"database/sql"
+	"os"
 
+	"github.com/bartodes/smilelog/internals/database"
 	"github.com/spf13/cobra"
 )
+
+type App struct {
+	DB *sql.DB
+}
 
 var rootCmd = &cobra.Command{
 	Use:   "smilelog",
@@ -13,11 +19,13 @@ var rootCmd = &cobra.Command{
 			Documentation: ...
 			Author: Bartolome Juan Des
 			Repo: https://github.com/bartodes/smilelog`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("SmileLog CLI 🦷")
-	},
 }
 
 func Execute() {
-	rootCmd.Execute()
+	db := database.InitDB()
+	defer db.Close()
+
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
 }

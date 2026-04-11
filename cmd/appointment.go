@@ -1,61 +1,38 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
 var appointmentCmd = &cobra.Command{
-	Use:     "appointment",
-	Aliases: []string{"apmnt"},
-	Short:   "Create an appointment",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Creating an appointment...")
-		return nil
-	},
+	Use:   "appointment",
+	Short: "Manage appointments",
 }
 
-var bookCmd = &cobra.Command{
-	Use:   "book",
-	Short: "Appointment",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Execution appointment book...")
-		return nil
-	},
+var appointmentCreateCmd = &cobra.Command{
+	Use:   "create",
+	Short: "Create an appointment",
 }
 
-var reappointmentCmd = &cobra.Command{
-	Use:   "reappointment",
-	Short: "Appointment",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Execution appointment reappointment...")
-		return nil
-	},
+var appointmentListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List appointments",
 }
 
-var cancelCmd = &cobra.Command{
+var appointmentCancelCmd = &cobra.Command{
 	Use:   "cancel",
-	Short: "Appointment",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Execution appointment cancel...")
-		return nil
-	},
+	Short: "Cancel an appointment",
 }
 
-var confirmCmd = &cobra.Command{
-	Use:   "confirm",
-	Short: "Appointment",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Execution appointment confirm...")
-		return nil
-	},
+var appointmentCompleteCmd = &cobra.Command{
+	Use:   "complete",
+	Short: "Complete an appointment and create a visit",
 }
 
 func init() {
 	rootCmd.AddCommand(appointmentCmd)
-	appointmentCmd.AddCommand(bookCmd)
-	appointmentCmd.AddCommand(reappointmentCmd)
-	appointmentCmd.AddCommand(cancelCmd)
-	appointmentCmd.AddCommand(confirmCmd)
+	appointmentCmd.AddCommand(appointmentCreateCmd)
+	appointmentCmd.AddCommand(appointmentListCmd)
+	appointmentCmd.AddCommand(appointmentCancelCmd)
+	appointmentCmd.AddCommand(appointmentCompleteCmd)
 }
