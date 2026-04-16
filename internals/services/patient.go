@@ -2,19 +2,18 @@ package services
 
 import (
 	"database/sql"
-)
 
-type Patient struct {
-	ID          int64
-	Name        string
-	LastName    string
-	Email       string
-	PhoneNumber uint
-}
+	. "github.com/bartodes/smilelog/internals/models"
+)
 
 func CreatePatient(p Patient, db *sql.DB) (Patient, error) {
 	query := `INSERT INTO patients (name, last_name, email, phone_number) 
-	VALUES (?,?,?,?)
+	VALUES (
+		?,
+		?,
+		NULLIF(?,''),
+		NULLIF(?,0)
+	)
 	RETURNING id;`
 
 	err := db.QueryRow(
