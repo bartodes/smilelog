@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
 
 	"github.com/bartodes/smilelog/internals/database"
@@ -24,6 +25,7 @@ func Execute() {
 	defer db.Close()
 
 	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
