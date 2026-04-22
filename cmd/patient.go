@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 
 	. "github.com/bartodes/smilelog/internals/models"
@@ -28,8 +29,18 @@ var patientCreateCmd = &cobra.Command{
 }
 
 var patientListCmd = &cobra.Command{
-	Use:   "create",
+	Use:   "list",
 	Short: "List patients",
+	Run: func(cmd *cobra.Command, args []string) {
+		patients, err := services.ListPatients(db)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for _, patient := range patients {
+			fmt.Println(patient)
+		}
+	},
 }
 
 var PatientHistoryCmd = &cobra.Command{
