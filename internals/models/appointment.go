@@ -1,7 +1,5 @@
 package models
 
-import "time"
-
 type Status string
 
 const (
@@ -15,7 +13,7 @@ type Appointment struct {
 	ID              int64
 	PatientID       int64
 	Status          Status
-	ScheduledFor    time.Time // ISO8601 datetime
+	ScheduledFor    string // ISO8601 datetime => time.RFC3339 Format
 	DurationMinutes int
 }
 
