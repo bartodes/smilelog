@@ -25,7 +25,7 @@ Table appointments as a {
   id INTEGER [pk]
   patient_id INTEGER [not null, ref: > p.id]
   status appointmentStatus [not null,default: "CREATED"]
-  scheduled_for TEXT [not null] // ISO8601 datetime
+  scheduled_for TEXT [not null] // SQLite datetime
   duration_minutes INTEGER [not null, default: "60"]
   
   indexes {
