@@ -3,6 +3,8 @@ package services
 import "errors"
 
 var (
-	ErrAppointmentOverlap = errors.New("detected schedule overlap")
-	ErrPatientNotFound    = errors.New("patient not found")
+	ErrAppointmentNotCreated = errors.New("appointment status is not 'CREATED'")
+	ErrAppointmentNotFound   = errors.New("appointment not found")
+	ErrAppointmentOverlap    = errors.New("detected schedule overlap")
+	ErrPatientNotFound       = errors.New("patient not found")
 )
