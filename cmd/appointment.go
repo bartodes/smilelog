@@ -26,7 +26,7 @@ var appointmentCreateCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		appointment.ScheduledFor = time.Now().UTC().Format(time.RFC3339)
+		appointment.ScheduledFor = time.Now().UTC().Format("2006-01-02 15:04:05")
 
 		overlap, err := CheckAppointmentOverlap(appointment.ScheduledFor, appointment.DurationMinutes, db)
 

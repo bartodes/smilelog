@@ -13,7 +13,7 @@ type Appointment struct {
 	ID              int64
 	PatientID       int64
 	Status          Status
-	ScheduledFor    string // ISO8601 datetime => time.RFC3339 Format
+	ScheduledFor    string // SQLite datetime => "2006-01-02 15:04:05" Fromat
 	DurationMinutes int
 }
 

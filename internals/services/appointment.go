@@ -2,7 +2,6 @@ package services
 
 import (
 	"database/sql"
-	"time"
 
 	. "github.com/bartodes/smilelog/internals/models"
 )
@@ -95,24 +94,29 @@ func ListAppointments(patientId int64, s Status, db *sql.DB) ([]Appointment, err
 /*
 Checks overlap of appointment schedule time
 */
-func CheckAppointmentOverlap(scheduleFor string, durationMinutes int, db *sql.DB) (bool, error) {
-	t, err := time.Parse(time.RFC3339, scheduleFor)
+func CheckAppointmentOverlap(scheduledFor string, durationMinutes int, db *sql.DB) (bool, error) {
+	query := `SELECT count(*) FROM appointments 
+		WHERE datetime(scheduled_for, '+' || :duration_minutes || ' minutes') > :scheduled_for
+		AND scheduled_for < datetime(scheduled_for, '+' || :duration_minutes || ' minutes')
+	;`
+
+	var overlappedAppointments int
+
+	err := db.QueryRow(
+		query,
+		sql.Named("scheduled_for", scheduledFor),
+		sql.Named("duration_minutes", durationMinutes),
+	).Scan(&overlappedAppointments)
 
 	if err != nil {
 		return false, err
 	}
 
-	scheduleEnd := t.Add(time.Duration(durationMinutes) * time.Minute).Format(time.RFC3339)
-	appointments, err := ListAppointmentsByScheduleRange(scheduleFor, scheduleEnd, db)
-	if err != nil {
-		return false, err
+	if overlappedAppointments > 0 {
+		return true, nil
 	}
 
-	if len(appointments) == 0 {
-		return false, nil
-	}
-
-	return true, nil
+	return false, nil
 }
 
 /*
@@ -122,11 +126,11 @@ Should get from config the working hours and get when the next appointment can b
 func GetAvailableScheduleForAppointment() {}
 
 /*
-Lists appointments by schedule datetime range (time.RFC3339 Fromat)
+Lists appointments by schedule datetime range ("2006-01-02 15:04:05" Fromat)
 */
 func ListAppointmentsByScheduleRange(start string, end string, db *sql.DB) ([]Appointment, error) {
 	query := `SELECT id, patient_id, status, scheduled_for, duration_minutes FROM appointments 
-		WHERE scheduled_for > ? OR scheduled_for < ?
+		WHERE scheduled_for > ? AND scheduled_for < ?
 	;`
 
 	rows, err := db.Query(query, start, end)
