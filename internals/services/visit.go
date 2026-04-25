@@ -6,6 +6,9 @@ import (
 	. "github.com/bartodes/smilelog/internals/models"
 )
 
+/*
+Creates a Visit. It's used by appointmentCompleteCmd
+*/
 func CreateVisit(appointmentId int64, notes string, db *sql.DB) (Visit, error) {
 	query := `INSERT INTO visits (appointment_id, notes) VALUES(?,?) RETURNING *;`
 
@@ -24,6 +27,11 @@ func CreateVisit(appointmentId int64, notes string, db *sql.DB) (Visit, error) {
 	return v, nil
 }
 
+/*
+	NOT USED
+
+Gets a visit from a specific appoinmtne
+*/
 func GetVisit(appointmentId int64, db *sql.DB) (Visit, error) {
 	query := `SELECT id, appointment_id, notes FROM visits WHERE appointment_id = ?;`
 
@@ -42,7 +50,7 @@ func GetVisit(appointmentId int64, db *sql.DB) (Visit, error) {
 }
 
 /*
-Lists all visits from a patient
+List all visits a patient had
 */
 func ListVisits(patientId int64, db *sql.DB) ([]Visit, error) {
 	query := `SELECT 

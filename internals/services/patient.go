@@ -6,6 +6,9 @@ import (
 	. "github.com/bartodes/smilelog/internals/models"
 )
 
+/*
+Creates a patient
+*/
 func CreatePatient(p Patient, db *sql.DB) (Patient, error) {
 	query := `INSERT INTO patients (name, last_name, email, phone_number) 
 	VALUES (
@@ -31,7 +34,9 @@ func CreatePatient(p Patient, db *sql.DB) (Patient, error) {
 	return p, nil
 }
 
-// maybe return only error and scan only to map error if patient doesnt exists
+/*
+Ensures a patient exists by id
+*/
 func PatientExists(id int64, db *sql.DB) error {
 	query := `SELECT 1 FROM patients WHERE id = ?;`
 
@@ -42,6 +47,9 @@ func PatientExists(id int64, db *sql.DB) error {
 	return nil
 }
 
+/*
+Lists all patients
+*/
 func ListPatients(db *sql.DB) ([]Patient, error) {
 	query := `SELECT id, name, last_name, email, IFNULL(phone_number,0) FROM patients;`
 

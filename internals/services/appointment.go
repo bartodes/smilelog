@@ -6,6 +6,9 @@ import (
 	. "github.com/bartodes/smilelog/internals/models"
 )
 
+/*
+Creates an appointment
+*/
 func CreateAppointment(a Appointment, db *sql.DB) (Appointment, error) {
 	query := `INSERT INTO appointments (patient_id, status, scheduled_for, duration_minutes)
 		VALUES(?,?,?,?)
@@ -27,6 +30,9 @@ func CreateAppointment(a Appointment, db *sql.DB) (Appointment, error) {
 	return a, nil
 }
 
+/*
+Gets an appointment by id
+*/
 func GetAppointment(id int64, db *sql.DB) (Appointment, error) {
 	query := `SELECT id, patient_id, status, scheduled_for, duration_minutes FROM appointments WHERE id = ?;`
 
@@ -49,6 +55,9 @@ func GetAppointment(id int64, db *sql.DB) (Appointment, error) {
 	return a, nil
 }
 
+/*
+List appointments of a patient
+*/
 func ListAppointments(patientId int64, db *sql.DB) ([]Appointment, error) {
 	query := `SELECT id, patient_id, status, scheduled_for, duration_minutes FROM appointments WHERE patient_id = ?;`
 
@@ -155,6 +164,11 @@ func ListAppointmentsByScheduleRange(start string, end string, db *sql.DB) ([]Ap
 	return appointments, nil
 }
 
+// UpdateAppointmentStatus() could be improved by only updating appointments status that are 'CREATED'
+
+/*
+Updates an appointment status
+*/
 func UpdateAppointmentStatus(id int64, s Status, db *sql.DB) error {
 	query := `UPDATE appointments SET status = ? WHERE id = ?;`
 
