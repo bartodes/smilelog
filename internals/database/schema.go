@@ -19,7 +19,7 @@ var tableSchema = []string{
 			DEFAULT 'CREATED' 
 			CHECK (status in ('CREATED','COMPLETED','CANCELED','NO_SHOW')),
 		"scheduled_for" TEXT NOT NULL,
-		"duration_minutes" INTEGER NOT NULL DEFAULT '60',
+		"duration_minutes" INTEGER NOT NULL DEFAULT 30,
 		FOREIGN KEY (patient_id) REFERENCES patients(id)
 	);`,
 	`CREATE TABLE IF NOT EXISTS "visits" ( 
