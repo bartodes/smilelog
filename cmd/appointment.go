@@ -48,7 +48,7 @@ var appointmentListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List appointments",
 	Run: func(cmd *cobra.Command, args []string) {
-		appmts, err := ListAppointments(appointment.ID, appointment.Status, db)
+		appmts, err := ListAppointments(patientID, db)
 		if err != nil {
 			log.Fatal(err)
 		}

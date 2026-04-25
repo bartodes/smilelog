@@ -49,19 +49,13 @@ func GetAppointment(id int64, db *sql.DB) (Appointment, error) {
 	return a, nil
 }
 
-func ListAppointments(patientId int64, s Status, db *sql.DB) ([]Appointment, error) {
-	query := `SELECT id, patient_id, status, scheduled_for, duration_minutes FROM appointments 
-		WHERE 
-			(NULLIF(:patient_id, 0) IS NULL OR patient_id = :patient_id) 
-		AND 
-			(NULLIF(:status, "") IS NULL OR status = :status)
-	;`
+func ListAppointments(patientId int64, db *sql.DB) ([]Appointment, error) {
+	query := `SELECT id, patient_id, status, scheduled_for, duration_minutes FROM appointments WHERE patient_id = ?;`
 
 	var appointments []Appointment
 	rows, err := db.Query(
 		query,
-		sql.Named("patient_id", patientId),
-		sql.Named("status", s),
+		patientId,
 	)
 
 	if err != nil {
@@ -96,8 +90,8 @@ Checks overlap of appointment schedule time
 */
 func CheckAppointmentOverlap(scheduledFor string, durationMinutes int, db *sql.DB) (bool, error) {
 	query := `SELECT count(*) FROM appointments 
-		WHERE datetime(scheduled_for, '+' || :duration_minutes || ' minutes') > :scheduled_for
-		AND scheduled_for < datetime(scheduled_for, '+' || :duration_minutes || ' minutes')
+		WHERE datetime(scheduled_for, '+' || duration_minutes || ' minutes') > :scheduled_for
+		AND scheduled_for < datetime(:scheduled_for, '+' || :duration_minutes || ' minutes')
 	;`
 
 	var overlappedAppointments int
