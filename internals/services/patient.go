@@ -32,23 +32,14 @@ func CreatePatient(p Patient, db *sql.DB) (Patient, error) {
 }
 
 // maybe return only error and scan only to map error if patient doesnt exists
-func GetPatient(id int64, db *sql.DB) (Patient, error) {
-	query := `SELECT id, name, last_name, email, IFNULL(phone_number,0) FROM patients WHERE id = ?;`
+func PatientExists(id int64, db *sql.DB) error {
+	query := `SELECT 1 FROM patients WHERE id = ?;`
 
-	var p Patient
-	err := db.QueryRow(query, id).Scan(
-		&p.ID,
-		&p.Name,
-		&p.LastName,
-		&p.Email,
-		&p.PhoneNumber,
-	)
-
-	if err == sql.ErrNoRows {
-		return Patient{}, ErrPatientNotFound
+	if err := db.QueryRow(query, id).Scan(); err == sql.ErrNoRows {
+		return ErrPatientNotFound
 	}
 
-	return p, nil
+	return nil
 }
 
 func ListPatients(db *sql.DB) ([]Patient, error) {
