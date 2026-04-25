@@ -49,7 +49,6 @@ var PatientHistoryCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(patientCmd)
 	patientCmd.AddCommand(patientCreateCmd)
 	patientCmd.AddCommand(patientListCmd)
 	patientCmd.AddCommand(PatientHistoryCmd)

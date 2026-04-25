@@ -20,9 +20,17 @@ var rootCmd = &cobra.Command{
 			Repo: https://github.com/bartodes/smilelog`,
 }
 
+func init() {
+	rootCmd.AddCommand(appointmentCmd)
+	rootCmd.AddCommand(patientCmd)
+	rootCmd.AddCommand(visitCmd)
+}
+
 func Execute() {
 	db = database.InitDB()
 	defer db.Close()
+
+	// services.ListAppointmentsByScheduleRange()
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
