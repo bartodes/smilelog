@@ -3,25 +3,20 @@ package services
 import (
 	"database/sql"
 	"time"
+
+	. "github.com/bartodes/smilelog/internals/models"
 )
 
-type Appointment struct {
-	ID              int64
-	PatientID       int64
-	Status          string
-	ScheduledFor    time.Time // ISO8601 datetime
-	DurationMinutes int
-}
-
-func CreateAppointment(a Appointment, patientId int64, db *sql.DB) (Appointment, error) {
-	query := `INSERT INTO appointments (patient_id, status, scheduled_for, durations_minutes)
-	VALUES(?,?,?,?)
-	RETURNING id;`
+func CreateAppointment(a Appointment, db *sql.DB) (Appointment, error) {
+	query := `INSERT INTO appointments (patient_id, status, scheduled_for, duration_minutes)
+		VALUES(?,?,?,?)
+		RETURNING id
+	;`
 
 	err := db.QueryRow(
 		query,
 		a.PatientID,
-		a.Status,
+		CREATED,
 		a.ScheduledFor,
 		a.DurationMinutes,
 	).Scan(&a.ID)
@@ -33,7 +28,6 @@ func CreateAppointment(a Appointment, patientId int64, db *sql.DB) (Appointment,
 	return a, nil
 }
 
-// Implement with optional parameter filter by schedule time (making use of the composite index)
 func GetAppointment(id int64, db *sql.DB) (Appointment, error) {
 	query := `SELECT id, patient_id, status, scheduled_for, duration_minutes FROM appointments WHERE id = ?;`
 
@@ -46,19 +40,30 @@ func GetAppointment(id int64, db *sql.DB) (Appointment, error) {
 		&a.DurationMinutes,
 	)
 
-	if err != nil {
+	if err == sql.ErrNoRows {
+		return Appointment{}, ErrAppointmentNotFound
+	} else if err != nil {
+		// returning if err is still not nil
 		return Appointment{}, err
 	}
 
 	return a, nil
 }
 
-// status -> 'CREATED','CONFIRMED','CANCELED','NO_SHOW'
-// Create new idx!
-func ListAppointmentsByStatus(status string, db *sql.DB) ([]Appointment, error) {
-	query := `SELECT id, patient_id, status, scheduled_for, duration_minutes FROM appointments WHERE status = ?;`
+func ListAppointments(patientId int64, s Status, db *sql.DB) ([]Appointment, error) {
+	query := `SELECT id, patient_id, status, scheduled_for, duration_minutes FROM appointments 
+		WHERE 
+			(NULLIF(:patient_id, 0) IS NULL OR patient_id = :patient_id) 
+		AND 
+			(NULLIF(:status, "") IS NULL OR status = :status)
+	;`
 
-	rows, err := db.Query(query, status)
+	var appointments []Appointment
+	rows, err := db.Query(
+		query,
+		sql.Named("patient_id", patientId),
+		sql.Named("status", s),
+	)
 
 	if err != nil {
 		return nil, err
@@ -66,8 +71,6 @@ func ListAppointmentsByStatus(status string, db *sql.DB) ([]Appointment, error) 
 
 	defer rows.Close()
 
-	var appointments []Appointment
-
 	for rows.Next() {
 		var a Appointment
 
@@ -89,16 +92,48 @@ func ListAppointmentsByStatus(status string, db *sql.DB) ([]Appointment, error) 
 	return appointments, nil
 }
 
-// schedule
-// make default range 1 month: if only start is provided the rage will be = start + 1 month in time.Time
-func ListAppointmentsByScheduleRange(start time.Time, end time.Time, db *sql.DB) ([]Appointment, error) {
+/*
+Checks overlap of appointment schedule time
+*/
+func CheckAppointmentOverlap(scheduleFor string, durationMinutes int, db *sql.DB) (bool, error) {
+	t, err := time.Parse(time.RFC3339, scheduleFor)
+
+	if err != nil {
+		return false, err
+	}
+
+	scheduleEnd := t.Add(time.Duration(durationMinutes) * time.Minute).Format(time.RFC3339)
+	appointments, err := ListAppointmentsByScheduleRange(scheduleFor, scheduleEnd, db)
+	if err != nil {
+		return false, err
+	}
+
+	if len(appointments) == 0 {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+/*
+Gets avaibale schedule time for appointments
+Should get from config the working hours and get when the next appointment can be scheduled (default 30 min)
+*/
+func GetAvailableScheduleForAppointment() {}
+
+/*
+Lists appointments by schedule datetime range (time.RFC3339 Fromat)
+*/
+func ListAppointmentsByScheduleRange(start string, end string, db *sql.DB) ([]Appointment, error) {
 	query := `SELECT id, patient_id, status, scheduled_for, duration_minutes FROM appointments 
-	WHERE scheduled_for >= ? AND scheduled_for <= ?;`
+		WHERE scheduled_for > ? OR scheduled_for < ?
+	;`
 
 	rows, err := db.Query(query, start, end)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	var appointments []Appointment
 	for rows.Next() {
@@ -122,40 +157,13 @@ func ListAppointmentsByScheduleRange(start time.Time, end time.Time, db *sql.DB)
 	return appointments, nil
 }
 
-// JOIN
-// Patient -> Appointments + Visits
-func ListVisitsByPatients(patientId int64, db *sql.DB) ([]Visit, error) {
-	query := `
-	SELECT 
-		v.id,
-		v.appointment_id,
-		v.notes
-	FROM visits v
-	INNER JOIN appointments a 
-		ON v.appointment_id = a.id
-	WHERE a.patient_id = ?;`
+func UpdateAppointmentStatus(id int64, s Status, db *sql.DB) error {
+	query := `UPDATE appointments SET status = ? WHERE id = ?;`
 
-	rows, err := db.Query(query, patientId)
+	_, err := db.Exec(query, s, id)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	var visits []Visit
-
-	for rows.Next() {
-		var v Visit
-		rows.Scan(
-			&v.ID,
-			&v.AppointmentId,
-			&v.Notes,
-		)
-
-		visits = append(visits, v)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return visits, nil
+	return nil
 }
