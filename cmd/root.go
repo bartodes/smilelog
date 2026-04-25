@@ -30,8 +30,6 @@ func Execute() {
 	db = database.InitDB()
 	defer db.Close()
 
-	// services.ListAppointmentsByScheduleRange()
-
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
