@@ -12,6 +12,17 @@ import (
 
 var appointment Appointment
 var visit Visit
+var defaultWorkingHours = WorkingSchedule{
+	Days: map[time.Weekday]bool{
+		time.Monday:    true,
+		time.Tuesday:   true,
+		time.Wednesday: true,
+		time.Thursday:  true,
+		time.Friday:    true,
+	},
+	Start: 8,
+	End:   18,
+}
 
 var appointmentCmd = &cobra.Command{
 	Use:   "appointment",
@@ -26,13 +37,41 @@ var appointmentCreateCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		appointment.ScheduledFor = time.Now().UTC().Format("2006-01-02 15:04:05")
+		if ok, err := appointment.IsValid(defaultWorkingHours); err != nil {
+			log.Fatal(err)
+		} else if !ok {
+			log.Fatal(ErrInvalidAppointment)
+		}
 
 		overlap, err := CheckAppointmentOverlap(appointment.ScheduledFor, appointment.DurationMinutes, db)
 
 		if overlap {
-			log.Fatalf("the appointment for patient '%d' could not be scheduled: %v", appointment.PatientID, ErrAppointmentOverlap)
-			// GetAvailableScheduleForAppointment()
+			appointments, err := ListAppointments(0, db)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			suggestedScheduleFor, err := GetAvailableScheduleForAppointment(appointments, appointment.DurationMinutes, defaultWorkingHours, db)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			if suggestedScheduleFor == "" {
+				log.Fatalf("the appointment for patient '%d' could not be scheduled: %v", appointment.PatientID, ErrAppointmentOverlap)
+			}
+
+			fmt.Printf("Detected overlap with schedule time! There is an available schedule slot at: %s\nConfirm the change (y/N): ", suggestedScheduleFor)
+
+			var response string
+			_, err = fmt.Scanln(&response)
+
+			if err != nil || (response != "y" && response != "Y") {
+				log.Fatal("Aborted")
+				return
+			}
+
+			appointment.ScheduledFor = suggestedScheduleFor
 		}
 
 		a, err := CreateAppointment(appointment, db)
@@ -130,8 +169,10 @@ func init() {
 	// CREATE
 	appointmentCreateCmd.Flags().Int64VarP(&appointment.PatientID, "patient-id", "p", 0, "id of the patient")
 	appointmentCreateCmd.Flags().IntVarP(&appointment.DurationMinutes, "duration", "d", 30, "duration of the appointment (in minutes)")
+	appointmentCreateCmd.Flags().StringVarP(&appointment.ScheduledFor, "scheduled-for", "s", "", "The datetime <y-m-d hh:mm> (e.g.: '2026-04-16 10:30') the appointment will be scheduled")
 
 	appointmentCreateCmd.MarkFlagRequired("patient-id")
+	appointmentCreateCmd.MarkFlagRequired("scheduled-for")
 
 	// COMPLETE
 	appointmentCompleteCmd.Flags().StringVarP(&visit.Notes, "notes", "n", "", "notes of patient visit")

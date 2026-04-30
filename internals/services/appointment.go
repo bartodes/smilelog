@@ -2,6 +2,7 @@ package services
 
 import (
 	"database/sql"
+	"time"
 
 	. "github.com/bartodes/smilelog/internals/models"
 )
@@ -59,12 +60,14 @@ func GetAppointment(id int64, db *sql.DB) (Appointment, error) {
 List appointments of a patient
 */
 func ListAppointments(patientId int64, db *sql.DB) ([]Appointment, error) {
-	query := `SELECT id, patient_id, status, scheduled_for, duration_minutes FROM appointments WHERE patient_id = ?;`
+	query := `SELECT id, patient_id, status, scheduled_for, duration_minutes FROM appointments 
+		WHERE (NULLIF(:patient_id, 0) IS NULL OR patient_id = :patient_id)
+	;`
 
 	var appointments []Appointment
 	rows, err := db.Query(
 		query,
-		patientId,
+		sql.Named("patient_id", patientId),
 	)
 
 	if err != nil {
@@ -99,11 +102,12 @@ Checks overlap of appointment schedule time
 */
 func CheckAppointmentOverlap(scheduledFor string, durationMinutes int, db *sql.DB) (bool, error) {
 	query := `SELECT count(*) FROM appointments 
-		WHERE datetime(scheduled_for, '+' || duration_minutes || ' minutes') > :scheduled_for
+		WHERE datetime(scheduled_for, '+' || (duration_minutes - 1) || ' minutes') > :scheduled_for
 		AND scheduled_for < datetime(:scheduled_for, '+' || :duration_minutes || ' minutes')
 	;`
 
 	var overlappedAppointments int
+	durationMinutes--
 
 	err := db.QueryRow(
 		query,
@@ -126,7 +130,51 @@ func CheckAppointmentOverlap(scheduledFor string, durationMinutes int, db *sql.D
 Gets avaibale schedule time for appointments
 Should get from config the working hours and get when the next appointment can be scheduled (default 30 min)
 */
-func GetAvailableScheduleForAppointment() {}
+func GetAvailableScheduleForAppointment(appointments []Appointment, durationMinutes int, ws WorkingSchedule, db *sql.DB) (string, error) {
+	for _, a := range appointments {
+		t, err := time.Parse("2006-01-02 15:04", a.ScheduledFor)
+		if err != nil {
+			return "", err
+		}
+
+		t = t.Add(time.Minute * time.Duration(a.DurationMinutes))
+		suggestedSchedule := t.Format("2006-01-02 15:04")
+		overlap, err := CheckAppointmentOverlap(suggestedSchedule, durationMinutes, db)
+
+		if err != nil {
+			return "", err
+		}
+
+		var suggestedAppointment = Appointment{
+			ScheduledFor:    suggestedSchedule,
+			DurationMinutes: durationMinutes,
+		}
+
+		valid, err := suggestedAppointment.IsValid(ws)
+		if err != nil {
+			return "", err
+		}
+
+		if !overlap && valid {
+			return suggestedSchedule, nil
+		}
+
+	}
+	a := appointments[len(appointments)-1]
+
+	t, err := time.Parse("2006-01-02 15:04", a.ScheduledFor)
+	if err != nil {
+		return "", err
+	}
+
+	t = t.AddDate(0, 0, 1)
+	suggestedSchedule := time.Date(
+		t.Year(), t.Month(), t.Day(),
+		ws.Start, 0, 0, 0, t.Location(),
+	).Format("2006-01-02 15:04")
+
+	return suggestedSchedule, nil
+}
 
 /*
 Lists appointments by schedule datetime range ("2006-01-02 15:04:05" Fromat)
@@ -163,8 +211,6 @@ func ListAppointmentsByScheduleRange(start string, end string, db *sql.DB) ([]Ap
 
 	return appointments, nil
 }
-
-// UpdateAppointmentStatus() could be improved by only updating appointments status that are 'CREATED'
 
 /*
 Updates an appointment status
