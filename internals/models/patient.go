@@ -7,10 +7,3 @@ type Patient struct {
 	Email       string
 	PhoneNumber uint
 }
-
-type PatientHistorySummary struct {
-	Patient         Patient
-	Stats           AppointmentStats
-	LastAppointment Appointment
-	LastVisit       Visit
-}
