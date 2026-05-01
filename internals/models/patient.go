@@ -7,3 +7,11 @@ type Patient struct {
 	Email       string
 	PhoneNumber uint
 }
+
+func (p Patient) FullName() string {
+	if p.LastName != "" {
+		return p.Name + " " + p.LastName
+	}
+
+	return p.Name
+}
