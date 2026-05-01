@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -11,34 +10,32 @@ import (
 
 const DB_NAME string = "smilelog"
 
-func InitDB() *sql.DB {
+func InitDB() (*sql.DB, error) {
 	basePath, err := os.Getwd()
 
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	dbPath := fmt.Sprintf("%s/%s.db", basePath, DB_NAME)
 	db, err := sql.Open("sqlite3", dbPath)
 
 	if err != nil {
-		log.Fatalf("error opening database: %v", err)
+		return nil, fmt.Errorf("error opening database: %v", err)
 	}
 
 	ok, err := tableExists(db, "patients")
-
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	if !ok {
-		err = createTables(db)
-		if err != nil {
-			log.Fatalf("error creating tables: %v", err)
+		if err := createTables(db); err != nil {
+			return nil, fmt.Errorf("error creating tables: %v", err)
 		}
 	}
 
-	return db
+	return db, nil
 }
 
 func tableExists(db *sql.DB, table_name string) (bool, error) {
