@@ -150,12 +150,12 @@ func GetAvailableScheduleForAppointment(appointments []Appointment, durationMinu
 			DurationMinutes: durationMinutes,
 		}
 
-		valid, err := suggestedAppointment.IsValid(ws)
+		err = suggestedAppointment.IsValid(ws)
 		if err != nil {
-			return "", err
+			continue
 		}
 
-		if !overlap && valid {
+		if !overlap {
 			return suggestedSchedule, nil
 		}
 

@@ -48,10 +48,32 @@ func PatientExists(id int64, db *sql.DB) error {
 }
 
 /*
+Gets patient by id
+*/
+func GetPatient(id int64, db *sql.DB) (Patient, error) {
+	query := `SELECT id, name, last_name, IFNULL(email, ''), IFNULL(phone_number,0) FROM patients WHERE id = ?;`
+
+	var p Patient
+	err := db.QueryRow(query, id).Scan(
+		&p.ID,
+		&p.Name,
+		&p.LastName,
+		&p.Email,
+		&p.PhoneNumber,
+	)
+
+	if err != nil {
+		return Patient{}, ErrPatientNotFound
+	}
+
+	return p, nil
+}
+
+/*
 Lists all patients
 */
 func ListPatients(db *sql.DB) ([]Patient, error) {
-	query := `SELECT id, name, last_name, email, IFNULL(phone_number,0) FROM patients;`
+	query := `SELECT id, name, last_name, IFNULL(email,''), IFNULL(phone_number,0) FROM patients;`
 
 	rows, err := db.Query(query)
 	if err != nil {
