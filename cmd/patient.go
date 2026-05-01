@@ -1,11 +1,9 @@
 package cmd
 
 import (
-	"fmt"
-	"log"
-
 	. "github.com/bartodes/smilelog/internals/models"
 	. "github.com/bartodes/smilelog/internals/services"
+	"github.com/bartodes/smilelog/internals/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -20,11 +18,12 @@ var patientCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a patient",
 	Run: func(cmd *cobra.Command, args []string) {
-		p, err := CreatePatient(patient, db)
+		_, err := CreatePatient(patient, db)
 		if err != nil {
-			log.Fatal(err)
+			ui.Error(err)
 		}
-		log.Println(p)
+		ui.Success("Patient created")
+		ui.Info("Name: " + patient.Name)
 	},
 }
 
@@ -34,12 +33,21 @@ var patientListCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		patients, err := ListPatients(db)
 		if err != nil {
-			log.Fatal(err)
+			ui.Error(err)
 		}
 
-		for _, patient := range patients {
-			fmt.Println(patient)
+		var rows []ui.PatientRow
+
+		for _, p := range patients {
+			rows = append(rows, ui.PatientRow{
+				ID:          p.ID,
+				Name:        p.Name + p.LastName,
+				Email:       p.Email,
+				PhoneNumber: p.PhoneNumber,
+			})
 		}
+
+		ui.RenderPatients(rows)
 	},
 }
 
@@ -48,46 +56,66 @@ var patientHistoryCmd = &cobra.Command{
 	Short: "Get a patient history summary",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := PatientExists(patient.ID, db); err != nil {
-			log.Fatal(err)
+			ui.Error(err)
 		}
+
+		// GetPatient to obtain fullname
 
 		appointments, err := ListAppointments(patient.ID, db)
 
 		if err != nil {
-			log.Fatal(err)
+			ui.Error(err)
 		}
-		var as AppointmentStats
+
+		var appointmentRows []ui.AppointmentRow
+		for _, a := range appointments {
+			appointmentRows = append(appointmentRows, ui.AppointmentRow{
+				ID:           a.ID,
+				ScheduledFor: a.ScheduledFor,
+				Status:       string(a.Status),
+			})
+		}
+
+		var stats AppointmentStats
 
 		for _, a := range appointments {
-			as.Total++
+			stats.Total++
 			switch a.Status {
 			case COMPLETED:
-				as.Completed++
+				stats.Completed++
 			case CANCELED:
-				as.Canceled++
+				stats.Canceled++
 			case NO_SHOW:
-				as.NoShow++
+				stats.NoShow++
 			}
 		}
 
 		visits, err := ListVisits(patient.ID, db)
 		if err != nil {
-			log.Fatal(err)
+			ui.Error(err)
 		}
 
-		if len(appointments) > 0 {
-			fmt.Printf("PATIENT HISTORY\nAPPOINTMENTS\n\tTotal: %d\n\tCompleted: %d\n\tCanceled: %d\n\tNoShow: %d\n",
-				as.Total,
-				as.Completed,
-				as.Canceled,
-				as.NoShow,
-			)
-			fmt.Printf("LAST APPOINTMENT: %+v\n", appointments[len(appointments)-1])
+		var visitRows []ui.VisitRow
+		for _, v := range visits {
+			visitRows = append(visitRows, ui.VisitRow{
+				ID:           v.ID,
+				PatientName:  patient.Name,             // GetPatient for PatientName
+				ScheduledFor: appointment.ScheduledFor, // GetPatient for ScheduledFor
+				Notes:        v.Notes,
+			})
 		}
 
-		if len(visits) > 0 {
-			fmt.Printf("LAST VISIT: %+v\n", visits[len(visits)-1])
+		historyView := ui.PatientHistoryView{
+			PatientName:       patient.Name,
+			TotalAppointments: stats.Total,
+			Completed:         stats.Completed,
+			Cancelled:         stats.Canceled,
+			NoShow:            stats.NoShow,
+			Appointments:      appointmentRows,
+			Visits:            visitRows,
 		}
+
+		ui.RenderPatientHistory(historyView)
 
 	},
 }

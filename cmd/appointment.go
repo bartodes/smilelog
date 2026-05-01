@@ -7,6 +7,7 @@ import (
 
 	. "github.com/bartodes/smilelog/internals/models"
 	. "github.com/bartodes/smilelog/internals/services"
+	"github.com/bartodes/smilelog/internals/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -34,11 +35,11 @@ var appointmentCreateCmd = &cobra.Command{
 	Short: "Create an appointment",
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := PatientExists(appointment.PatientID, db); err != nil {
-			log.Fatal(err)
+			ui.Error(err)
 		}
 
 		if ok, err := appointment.IsValid(defaultWorkingHours); err != nil {
-			log.Fatal(err)
+			ui.Error(err)
 		} else if !ok {
 			log.Fatal(ErrInvalidAppointment)
 		}
@@ -48,13 +49,13 @@ var appointmentCreateCmd = &cobra.Command{
 		if overlap {
 			appointments, err := ListAppointments(0, db)
 			if err != nil {
-				log.Fatal(err)
+				ui.Error(err)
 			}
 
 			suggestedScheduleFor, err := GetAvailableScheduleForAppointment(appointments, appointment.DurationMinutes, defaultWorkingHours, db)
 
 			if err != nil {
-				log.Fatal(err)
+				ui.Error(err)
 			}
 
 			if suggestedScheduleFor == "" {
@@ -76,10 +77,11 @@ var appointmentCreateCmd = &cobra.Command{
 
 		a, err := CreateAppointment(appointment, db)
 		if err != nil {
-			log.Fatal(err)
+			ui.Error(err)
 		}
 
-		fmt.Println(a)
+		ui.Success("Appointment created")
+		ui.Info(fmt.Sprintf("Scheduled: %s", a.ScheduledFor))
 	},
 }
 
@@ -87,14 +89,25 @@ var appointmentListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List appointments",
 	Run: func(cmd *cobra.Command, args []string) {
-		appmts, err := ListAppointments(patientID, db)
+		appmts, err := ListAppointments(appointment.PatientID, db)
 		if err != nil {
-			log.Fatal(err)
+			ui.Error(err)
 		}
 
-		for a := range appmts {
-			fmt.Println(appmts[a])
+		if appointment.PatientID > 0 {
+			fmt.Printf("Listing appointments of patient: %d\n", appointment.PatientID)
 		}
+		var rows []ui.AppointmentRow
+
+		for _, a := range appmts {
+			rows = append(rows, ui.AppointmentRow{
+				ID:           a.ID,
+				ScheduledFor: a.ScheduledFor,
+				Status:       string(a.Status),
+			})
+		}
+
+		ui.RenderAppointments(rows)
 	},
 }
 
@@ -110,14 +123,14 @@ var appointmentCompleteCmd = &cobra.Command{
 
 		v, err := CreateVisit(appointment.ID, visit.Notes, db)
 		if err != nil {
-			log.Fatal(err)
+			ui.Error(err)
 		}
 
 		fmt.Println(v)
 
 		err = UpdateAppointmentStatus(appointment.ID, COMPLETED, db)
 		if err != nil {
-			log.Fatal(err)
+			ui.Error(err)
 		}
 	},
 }
@@ -134,7 +147,7 @@ var appointmentCancelCmd = &cobra.Command{
 
 		err = UpdateAppointmentStatus(appointment.ID, CANCELED, db)
 		if err != nil {
-			log.Fatal(err)
+			ui.Error(err)
 		}
 	},
 }
@@ -151,7 +164,7 @@ var appointmentNoShowCmd = &cobra.Command{
 
 		err = UpdateAppointmentStatus(appointment.ID, NO_SHOW, db)
 		if err != nil {
-			log.Fatal(err)
+			ui.Error(err)
 		}
 	},
 }
