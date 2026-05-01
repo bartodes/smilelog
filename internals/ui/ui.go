@@ -27,7 +27,7 @@ var (
 // ---------- UTILS ----------
 
 func nullSafe(s string) string {
-	if s == "" {
+	if s == "" || s == "0" {
 		return "-"
 	}
 	return s

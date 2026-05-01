@@ -1,7 +1,8 @@
 package cmd
 
 import (
-	. "github.com/bartodes/smilelog/internals/models"
+	"os"
+
 	. "github.com/bartodes/smilelog/internals/services"
 	"github.com/bartodes/smilelog/internals/ui"
 	"github.com/spf13/cobra"
@@ -21,25 +22,39 @@ var listVisitCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := PatientExists(patientID, db); err != nil {
 			ui.Error(err)
+			os.Exit(1)
 		}
 
-		var visits []Visit
+		p, err := GetPatient(patientID, db)
+		if err != nil {
+			ui.Error(err)
+			os.Exit(1)
+		}
+
 		visits, err := ListVisits(patientID, db)
 		if err != nil {
 			ui.Error(err)
+			os.Exit(1)
 		}
 
 		if len(visits) == 0 {
 			ui.Info("Patient has no visits")
+			os.Exit(0)
 		}
 
 		var rows []ui.VisitRow
 
 		for _, v := range visits {
+			a, err := GetAppointment(v.AppointmentId, db)
+			if err != nil {
+				ui.Error(err)
+				os.Exit(1)
+			}
+
 			rows = append(rows, ui.VisitRow{
 				ID:           v.ID,
-				PatientName:  patient.Name,             //getPatient for name
-				ScheduledFor: appointment.ScheduledFor, //getAppointment for ScheduledFor
+				PatientName:  p.FullName(),
+				ScheduledFor: a.ScheduledFor,
 				Notes:        v.Notes,
 			})
 		}

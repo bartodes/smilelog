@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"os"
+	"strconv"
+
 	. "github.com/bartodes/smilelog/internals/models"
 	. "github.com/bartodes/smilelog/internals/services"
 	"github.com/bartodes/smilelog/internals/ui"
@@ -18,12 +21,18 @@ var patientCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a patient",
 	Run: func(cmd *cobra.Command, args []string) {
-		_, err := CreatePatient(patient, db)
+		p, err := CreatePatient(patient, db)
 		if err != nil {
 			ui.Error(err)
+			os.Exit(1)
 		}
+
 		ui.Success("Patient created")
-		ui.Info("Name: " + patient.Name)
+		ui.Info("ID: " + strconv.Itoa(int(p.ID)))
+		ui.Info("Name: " + p.Name)
+		ui.Info("Last Name: " + p.LastName)
+		ui.Info("Phone: " + strconv.Itoa(int(p.PhoneNumber)))
+		ui.Info("Email: " + p.Email)
 	},
 }
 
@@ -34,6 +43,7 @@ var patientListCmd = &cobra.Command{
 		patients, err := ListPatients(db)
 		if err != nil {
 			ui.Error(err)
+			os.Exit(1)
 		}
 
 		var rows []ui.PatientRow
@@ -41,7 +51,7 @@ var patientListCmd = &cobra.Command{
 		for _, p := range patients {
 			rows = append(rows, ui.PatientRow{
 				ID:          p.ID,
-				Name:        p.Name + p.LastName,
+				Name:        p.FullName(),
 				Email:       p.Email,
 				PhoneNumber: p.PhoneNumber,
 			})
@@ -57,20 +67,27 @@ var patientHistoryCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := PatientExists(patient.ID, db); err != nil {
 			ui.Error(err)
+			os.Exit(1)
 		}
 
-		// GetPatient to obtain fullname
+		p, err := GetPatient(patient.ID, db)
+		if err != nil {
+			ui.Error(err)
+			os.Exit(1)
+		}
 
 		appointments, err := ListAppointments(patient.ID, db)
 
 		if err != nil {
 			ui.Error(err)
+			os.Exit(1)
 		}
 
 		var appointmentRows []ui.AppointmentRow
 		for _, a := range appointments {
 			appointmentRows = append(appointmentRows, ui.AppointmentRow{
 				ID:           a.ID,
+				PatientName:  p.FullName(),
 				ScheduledFor: a.ScheduledFor,
 				Status:       string(a.Status),
 			})
@@ -93,26 +110,35 @@ var patientHistoryCmd = &cobra.Command{
 		visits, err := ListVisits(patient.ID, db)
 		if err != nil {
 			ui.Error(err)
+			os.Exit(1)
 		}
 
 		var visitRows []ui.VisitRow
 		for _, v := range visits {
+			a, err := GetAppointment(v.AppointmentId, db)
+			if err != nil {
+				ui.Error(err)
+				os.Exit(1)
+			}
+
 			visitRows = append(visitRows, ui.VisitRow{
 				ID:           v.ID,
-				PatientName:  patient.Name,             // GetPatient for PatientName
-				ScheduledFor: appointment.ScheduledFor, // GetPatient for ScheduledFor
+				PatientName:  p.FullName(),
+				ScheduledFor: a.ScheduledFor,
 				Notes:        v.Notes,
 			})
 		}
 
 		historyView := ui.PatientHistoryView{
-			PatientName:       patient.Name,
+			PatientName: p.FullName(),
+
 			TotalAppointments: stats.Total,
 			Completed:         stats.Completed,
 			Cancelled:         stats.Canceled,
 			NoShow:            stats.NoShow,
-			Appointments:      appointmentRows,
-			Visits:            visitRows,
+
+			Appointments: appointmentRows,
+			Visits:       visitRows,
 		}
 
 		ui.RenderPatientHistory(historyView)

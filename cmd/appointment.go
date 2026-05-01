@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"log"
+	"os"
 	"time"
 
 	. "github.com/bartodes/smilelog/internals/models"
@@ -36,12 +36,12 @@ var appointmentCreateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := PatientExists(appointment.PatientID, db); err != nil {
 			ui.Error(err)
+			os.Exit(1)
 		}
 
-		if ok, err := appointment.IsValid(defaultWorkingHours); err != nil {
+		if err := appointment.IsValid(defaultWorkingHours); err != nil {
 			ui.Error(err)
-		} else if !ok {
-			log.Fatal(ErrInvalidAppointment)
+			os.Exit(1)
 		}
 
 		overlap, err := CheckAppointmentOverlap(appointment.ScheduledFor, appointment.DurationMinutes, db)
@@ -50,26 +50,32 @@ var appointmentCreateCmd = &cobra.Command{
 			appointments, err := ListAppointments(0, db)
 			if err != nil {
 				ui.Error(err)
+				os.Exit(1)
 			}
 
 			suggestedScheduleFor, err := GetAvailableScheduleForAppointment(appointments, appointment.DurationMinutes, defaultWorkingHours, db)
 
 			if err != nil {
 				ui.Error(err)
+				os.Exit(1)
 			}
 
 			if suggestedScheduleFor == "" {
-				log.Fatalf("the appointment for patient '%d' could not be scheduled: %v", appointment.PatientID, ErrAppointmentOverlap)
+				err = fmt.Errorf("the appointment for patient '%d' could not be scheduled: %v", appointment.PatientID, ErrAppointmentOverlap)
+				ui.Error(err)
+				os.Exit(1)
 			}
 
-			fmt.Printf("Detected overlap with schedule time! There is an available schedule slot at: %s\nConfirm the change (y/N): ", suggestedScheduleFor)
+			msg := fmt.Sprintf("Detected overlap with schedule time! There is an available schedule slot at: %s\nConfirm the change (y/N): ", suggestedScheduleFor)
+			ui.Info(msg)
 
 			var response string
 			_, err = fmt.Scanln(&response)
 
 			if err != nil || (response != "y" && response != "Y") {
-				log.Fatal("Aborted")
-				return
+				err = fmt.Errorf("Aborted")
+				ui.Error(err)
+				os.Exit(1)
 			}
 
 			appointment.ScheduledFor = suggestedScheduleFor
@@ -78,10 +84,12 @@ var appointmentCreateCmd = &cobra.Command{
 		a, err := CreateAppointment(appointment, db)
 		if err != nil {
 			ui.Error(err)
+			os.Exit(1)
 		}
 
 		ui.Success("Appointment created")
-		ui.Info(fmt.Sprintf("Scheduled: %s", a.ScheduledFor))
+		msg := fmt.Sprintf("Scheduled: %s", a.ScheduledFor)
+		ui.Info(msg)
 	},
 }
 
@@ -92,16 +100,25 @@ var appointmentListCmd = &cobra.Command{
 		appmts, err := ListAppointments(appointment.PatientID, db)
 		if err != nil {
 			ui.Error(err)
+			os.Exit(1)
 		}
 
-		if appointment.PatientID > 0 {
-			fmt.Printf("Listing appointments of patient: %d\n", appointment.PatientID)
-		}
 		var rows []ui.AppointmentRow
 
 		for _, a := range appmts {
+			var p Patient
+
+			if a.PatientID != p.ID {
+				p, err = GetPatient(a.PatientID, db)
+				if err != nil {
+					ui.Error(err)
+					os.Exit(1)
+				}
+			}
+
 			rows = append(rows, ui.AppointmentRow{
 				ID:           a.ID,
+				PatientName:  p.FullName(),
 				ScheduledFor: a.ScheduledFor,
 				Status:       string(a.Status),
 			})
@@ -118,20 +135,24 @@ var appointmentCompleteCmd = &cobra.Command{
 		a, err := GetAppointment(appointment.ID, db)
 
 		if !a.IsCreated() {
-			log.Fatal(ErrAppointmentNotCreated)
+			ui.Error(ErrAppointmentNotCreated)
+			os.Exit(1)
 		}
 
 		v, err := CreateVisit(appointment.ID, visit.Notes, db)
 		if err != nil {
 			ui.Error(err)
+			os.Exit(1)
 		}
-
-		fmt.Println(v)
 
 		err = UpdateAppointmentStatus(appointment.ID, COMPLETED, db)
 		if err != nil {
 			ui.Error(err)
+			os.Exit(1)
 		}
+
+		ui.Success("Appointment completed\n")
+		ui.Info(fmt.Sprintf("Created visit with ID: %d", v.ID))
 	},
 }
 
@@ -142,13 +163,17 @@ var appointmentCancelCmd = &cobra.Command{
 		a, err := GetAppointment(appointment.ID, db)
 
 		if !a.IsCreated() {
-			log.Fatal(ErrAppointmentNotCreated)
+			ui.Error(ErrAppointmentNotCreated)
+			os.Exit(1)
 		}
 
 		err = UpdateAppointmentStatus(appointment.ID, CANCELED, db)
 		if err != nil {
 			ui.Error(err)
+			os.Exit(1)
 		}
+
+		ui.Success("Appointment canceled")
 	},
 }
 
@@ -159,13 +184,17 @@ var appointmentNoShowCmd = &cobra.Command{
 		a, err := GetAppointment(appointment.ID, db)
 
 		if !a.IsCreated() {
-			log.Fatal(ErrAppointmentNotCreated)
+			ui.Error(ErrAppointmentNotCreated)
+			os.Exit(1)
 		}
 
 		err = UpdateAppointmentStatus(appointment.ID, NO_SHOW, db)
 		if err != nil {
 			ui.Error(err)
+			os.Exit(1)
 		}
+
+		ui.Success("Appointment marked as noshow")
 	},
 }
 
@@ -189,14 +218,14 @@ func init() {
 
 	// COMPLETE
 	appointmentCompleteCmd.Flags().StringVarP(&visit.Notes, "notes", "n", "", "notes of patient visit")
-	appointmentCompleteCmd.Flags().Int64Var(&appointment.ID, "id", 0, "id of the patient")
+	appointmentCompleteCmd.Flags().Int64Var(&appointment.ID, "id", 0, "id of the appointment")
 	appointmentCompleteCmd.MarkFlagRequired("id")
 
 	// CANCEL
-	appointmentCancelCmd.PersistentFlags().Int64Var(&appointment.ID, "id", 0, "id of the patient")
+	appointmentCancelCmd.PersistentFlags().Int64Var(&appointment.ID, "id", 0, "id of the appointment")
 	appointmentCancelCmd.MarkFlagRequired("id")
 
 	// NOSHOW
-	appointmentNoShowCmd.PersistentFlags().Int64Var(&appointment.ID, "id", 0, "id of the patient")
+	appointmentNoShowCmd.PersistentFlags().Int64Var(&appointment.ID, "id", 0, "id of the appointment")
 	appointmentNoShowCmd.MarkFlagRequired("id")
 }
