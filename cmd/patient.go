@@ -154,6 +154,8 @@ func init() {
 	patientCreateCmd.Flags().StringVarP(&patient.LastName, "lastname", "l", "", "last name of the patient")
 	patientCreateCmd.Flags().StringVarP(&patient.Email, "email", "e", "", "email of the patient")
 	patientCreateCmd.Flags().UintVarP(&patient.PhoneNumber, "phone", "p", 0, "phone number of the patitent")
+	patientCreateCmd.MarkFlagRequired("name")
+	patientCreateCmd.MarkFlagsOneRequired("email", "phone")
 
 	patientHistoryCmd.Flags().Int64VarP(&patient.ID, "patient-id", "p", 0, "the id of the patient")
 	patientHistoryCmd.MarkFlagRequired("patient-id")

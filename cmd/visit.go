@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	. "github.com/bartodes/smilelog/internals/services"
@@ -38,7 +39,7 @@ var listVisitCmd = &cobra.Command{
 		}
 
 		if len(visits) == 0 {
-			ui.Info("Patient has no visits")
+			ui.Info(fmt.Sprintf("no visit found for patient %d", patientID))
 			os.Exit(0)
 		}
 

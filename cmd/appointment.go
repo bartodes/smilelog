@@ -103,6 +103,14 @@ var appointmentListCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		if len(appmts) == 0 {
+			if appointment.PatientID > 0 {
+				ui.Info(fmt.Sprintf("no appointment found for patient %d", appointment.PatientID))
+				os.Exit(0)
+			}
+
+			ui.Info("no appointment found")
+		}
 		var rows []ui.AppointmentRow
 
 		for _, a := range appmts {
@@ -126,6 +134,13 @@ var appointmentListCmd = &cobra.Command{
 
 		ui.RenderAppointments(rows)
 	},
+}
+
+var appointmentUpdateCmd = &cobra.Command{
+	Use:       "update",
+	Short:     "Update an appointment status ['COMPLETE', 'CANCEL', 'NO_SHOW']",
+	Args:      cobra.ExactArgs(1),
+	ValidArgs: []string{"complete", "cancel", "noshow"},
 }
 
 var appointmentCompleteCmd = &cobra.Command{
@@ -201,12 +216,8 @@ var appointmentNoShowCmd = &cobra.Command{
 func init() {
 	appointmentCmd.AddCommand(appointmentCreateCmd)
 	appointmentCmd.AddCommand(appointmentListCmd)
-	appointmentCmd.AddCommand(appointmentCancelCmd)
-	appointmentCmd.AddCommand(appointmentCompleteCmd)
-	appointmentCmd.AddCommand(appointmentNoShowCmd)
-
-	//APPOINTMENTS
-	appointmentCmd.PersistentFlags().Int64VarP(&appointment.PatientID, "patient-id", "p", 0, "id of the patient")
+	appointmentCmd.AddCommand(appointmentUpdateCmd)
+	appointmentUpdateCmd.AddCommand(appointmentCancelCmd, appointmentCompleteCmd, appointmentNoShowCmd)
 
 	// CREATE
 	appointmentCreateCmd.Flags().Int64VarP(&appointment.PatientID, "patient-id", "p", 0, "id of the patient")
@@ -216,16 +227,10 @@ func init() {
 	appointmentCreateCmd.MarkFlagRequired("patient-id")
 	appointmentCreateCmd.MarkFlagRequired("scheduled-for")
 
-	// COMPLETE
-	appointmentCompleteCmd.Flags().StringVarP(&visit.Notes, "notes", "n", "", "notes of patient visit")
-	appointmentCompleteCmd.Flags().Int64Var(&appointment.ID, "id", 0, "id of the appointment")
-	appointmentCompleteCmd.MarkFlagRequired("id")
+	// UPDATE {"complete", "cancel", "noshow"}
+	appointmentUpdateCmd.PersistentFlags().Int64Var(&appointment.ID, "id", 0, "id of the appointment")
+	appointmentUpdateCmd.MarkPersistentFlagRequired("id")
 
-	// CANCEL
-	appointmentCancelCmd.PersistentFlags().Int64Var(&appointment.ID, "id", 0, "id of the appointment")
-	appointmentCancelCmd.MarkFlagRequired("id")
-
-	// NOSHOW
-	appointmentNoShowCmd.PersistentFlags().Int64Var(&appointment.ID, "id", 0, "id of the appointment")
-	appointmentNoShowCmd.MarkFlagRequired("id")
+	appointmentCompleteCmd.Flags().StringVarP(&visit.Notes, "notes", "n", "", "visit notes")
+	appointmentCompleteCmd.MarkFlagRequired("notes")
 }
