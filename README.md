@@ -1,6 +1,6 @@
 # smilelog
 
-Simple command-line app for managin dental appointments and patient records. Now dentists, like my mom (jk she doesn't know how to use the terminal) can keep track of scheduled visits, store basic patient information and organize their daily workflow.
+Simple command-line app for managin dental appointments and patient records. Now dentists, like my mom (jk she doesn't know how to use the terminal) can keep track of scheduled appointments, store basic patient information and organize their daily workflow.
 
 ## Purpose
 
@@ -28,7 +28,7 @@ This includes:
 
 The core application logic, data model, and business rules were designed and implemented manually. AI was used strictly as a productivity aid for non-critical presentation concerns.
 
-# CLI Documentation
+## CLI Documentation
 ### Commands
 #### Options
 
@@ -56,8 +56,6 @@ Represents a person receiving appointments.
 - full_name
 - email
 - phone_number
-
----
 
 ### Appointment
 
