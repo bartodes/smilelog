@@ -39,6 +39,7 @@ var patientCreateCmd = &cobra.Command{
 var patientListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List patients",
+	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		patients, err := ListPatients(db)
 		if err != nil {

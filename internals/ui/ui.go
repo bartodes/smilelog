@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/olekukonko/tablewriter"
@@ -186,5 +188,65 @@ func colorStatus(status string) string {
 		return errorStyle.Render(status)
 	default:
 		return status
+	}
+}
+
+// ---------- WORKING SCHEDULE ----------
+
+type WorkingScheduleView struct {
+	Days      map[time.Weekday]bool
+	StartHour int
+	EndHour   int
+}
+
+func RenderWorkingSchedule(w WorkingScheduleView) {
+	Title("Working Schedule")
+	fmt.Println()
+
+	orderedDays := []time.Weekday{
+		time.Monday,
+		time.Tuesday,
+		time.Wednesday,
+		time.Thursday,
+		time.Friday,
+		time.Saturday,
+		time.Sunday,
+	}
+
+	var days []string
+
+	for _, d := range orderedDays {
+		if w.Days[d] {
+			days = append(days, weekdayToString(d))
+		}
+	}
+
+	fmt.Println("Days:  " + strings.Join(days, ", "))
+	fmt.Println("Hours: " + formatHours(w.StartHour, w.EndHour))
+	fmt.Println()
+}
+
+func formatHours(start, end int) string {
+	return fmt.Sprintf("%02d:00–%02d:00", start, end)
+}
+
+func weekdayToString(d time.Weekday) string {
+	switch d {
+	case time.Monday:
+		return "Monday"
+	case time.Tuesday:
+		return "Tuesday"
+	case time.Wednesday:
+		return "Wednesday"
+	case time.Thursday:
+		return "Thursday"
+	case time.Friday:
+		return "Friday"
+	case time.Saturday:
+		return "Saturday"
+	case time.Sunday:
+		return "Sunday"
+	default:
+		return ""
 	}
 }

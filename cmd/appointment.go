@@ -41,6 +41,25 @@ var appointmentCreateCmd = &cobra.Command{
 
 		if err := appointment.IsValid(defaultWorkingHours); err != nil {
 			ui.Error(err)
+			t, err := time.Parse("2006-01-02 15:04", appointment.ScheduledFor)
+			if err != nil {
+				ui.Error(err)
+				os.Exit(1)
+			}
+
+			fmt.Println()
+			ui.Title("Scheduled Date Entered")
+			fmt.Println()
+			fmt.Printf("Date Time: %s\n", appointment.ScheduledFor)
+			fmt.Printf("Weekday: %s\n", t.Weekday().String())
+			fmt.Println()
+
+			ui.RenderWorkingSchedule(ui.WorkingScheduleView{
+				Days:      defaultWorkingHours.Days,
+				StartHour: defaultWorkingHours.Start,
+				EndHour:   defaultWorkingHours.End,
+			})
+
 			os.Exit(1)
 		}
 
@@ -166,8 +185,9 @@ var appointmentCompleteCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		ui.Success("Appointment completed\n")
-		ui.Info(fmt.Sprintf("Created visit with ID: %d", v.ID))
+		ui.Success("Appointment completed")
+		msg := fmt.Sprintf("Created visit with ID: %d", v.ID)
+		ui.Info(msg)
 	},
 }
 
@@ -226,6 +246,9 @@ func init() {
 
 	appointmentCreateCmd.MarkFlagRequired("patient-id")
 	appointmentCreateCmd.MarkFlagRequired("scheduled-for")
+
+	// LIST
+	appointmentListCmd.Flags().Int64VarP(&appointment.PatientID, "patient-id", "p", 0, "id of the patient")
 
 	// UPDATE {"complete", "cancel", "noshow"}
 	appointmentUpdateCmd.PersistentFlags().Int64Var(&appointment.ID, "id", 0, "id of the appointment")
