@@ -12,8 +12,8 @@ Creates a patient
 func CreatePatient(p Patient, db *sql.DB) (Patient, error) {
 	query := `INSERT INTO patients (name, last_name, email, phone_number) 
 	VALUES (
-		?,
-		?,
+		NULLIF(?,''),
+		NULLIF(?,''),
 		NULLIF(?,''),
 		NULLIF(?,0)
 	)
