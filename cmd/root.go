@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/bartodes/smilelog/internals/database"
-	"github.com/bartodes/smilelog/internals/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -25,14 +24,7 @@ func init() {
 }
 
 func Execute() {
-	var err error
-
-	db, err = database.InitDB()
-	if err != nil {
-		ui.Error(err)
-		os.Exit(1)
-	}
-
+	db = database.InitDB()
 	defer db.Close()
 
 	if err := rootCmd.Execute(); err != nil {

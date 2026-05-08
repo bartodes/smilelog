@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -10,53 +11,41 @@ import (
 
 const DB_NAME string = "smilelog"
 
-func InitDB() (*sql.DB, error) {
+func InitDB() *sql.DB {
 	basePath, err := os.Getwd()
 
 	if err != nil {
-		return nil, err
+		log.Fatal(err)
 	}
 
 	dbPath := fmt.Sprintf("%s/%s.db", basePath, DB_NAME)
 	db, err := sql.Open("sqlite3", dbPath)
 
 	if err != nil {
-		return nil, fmt.Errorf("error opening database: %v", err)
+		log.Fatalf("error opening database: %v", err)
 	}
 
-	ok, err := tableExists(db, "patients")
-	if err != nil {
-		return nil, err
-	}
+	ExecSchema(db)
 
-	if !ok {
-		if err := createTables(db); err != nil {
-			return nil, fmt.Errorf("error creating tables: %v", err)
-		}
-	}
-
-	return db, nil
+	return db
 }
 
-func tableExists(db *sql.DB, table_name string) (bool, error) {
-	query := "SELECT count(*) FROM sqlite_master WHERE type='table' AND name=?;"
-
-	row := db.QueryRow(query, table_name)
-
+func ExecSchema(db *sql.DB) {
 	var count int
-	err := row.Scan(&count)
+
+	err := db.QueryRow("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='patients';").Scan(&count)
 
 	if err != nil {
-		return false, err
+		log.Fatal(err)
 	}
 
-	return count > 0, nil
-}
+	if count > 0 {
+		return
+	}
 
-func createTables(db *sql.DB) error {
 	tx, err := db.Begin()
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 
 	defer tx.Rollback()
@@ -64,14 +53,11 @@ func createTables(db *sql.DB) error {
 	for _, query := range tableSchema {
 		_, err := tx.Exec(query)
 		if err != nil {
-			return err
+			log.Fatal(err)
 		}
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return err
+	if err := tx.Commit(); err != nil {
+		log.Fatal(err)
 	}
-
-	return nil
 }
