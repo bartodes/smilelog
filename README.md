@@ -17,17 +17,6 @@ The main goals of the project are:
 
 The project intentionally keeps the scope controlled while touching multiple important areas of backend development, making it a solid foundation for further extensions or refactoring.
 
-## UI Notice
-
-The basic UI layer of this CLI (terminal output formatting, styling, and tables) was generated with the assistance of AI tools.
-
-This includes:
-- Output structure and formatting decisions  
-- Styling definitions (colors, layout)  
-- Table rendering implementation  
-
-The core application logic, data model, and business rules were designed and implemented manually. AI was used strictly as a productivity aid for non-critical presentation concerns.
-
 ## CLI Documentation
 ### Commands
 #### Options
@@ -80,51 +69,62 @@ Represents a completed appointment.
 This section outlines potential improvements for anyone interested in extending or refining the project.
 
 ### Persistence & Data Handling
-- [ ] Migrate from SQLite to a more robust DB (PostgreSQL) for concurrency safety.
-- [ ] Introduce migrations instead of raw schema execution.
-- [ ] Add soft deletes for entities.
+- Migrate from SQLite to a more robust DB (PostgreSQL) for concurrency safety.
+- Introduce migrations instead of raw schema execution.
+- Add soft deletes for entities.
 
 ### Scheduling Engine
-- [ ] Improve overlap detection with indexed queries for performance.
-- [ ] Support timezone-aware scheduling.
-- [ ] Allow configurable buffer time between appointments.
-- [ ] Support recurring appointments.
+- Improve overlap detection with indexed queries for performance.
+- Support timezone-aware scheduling.
+- Allow configurable buffer time between appointments.
+- Support recurring appointments.
 
 ### Working Schedule
-- [ ] Promote the working schedule from in-memory configuration to a persisted entity.
-- [ ] Design a `working_schedules` table (e.g. `id`, `weekday`, `start_time`, `end_time`).
-- [ ] Support multiple schedules (e.g. different rules per day).
-- [ ] Add CRUD commands for managing schedules via CLI.
-- [ ] Update appointment validation to query schedules from the database instead of static config.
-- [ ] Allow future extensions such as holidays, exceptions, and overrides.
+- Promote the working schedule from in-memory configuration to a persisted entity.
+- Design a `working_schedules` table (e.g. `id`, `weekday`, `start_time`, `end_time`).
+- Support multiple schedules (e.g. different rules per day).
+- Add CRUD commands for managing schedules via CLI.
+- Update appointment validation to query schedules from the database instead of static config.
+- Allow future extensions such as holidays, exceptions, and overrides.
 
 ### No-Show Logic
-- [ ] Introduce background job or cron-based status updater.
-- [ ] Add configurable tolerance window.
-- [ ] Track check-in timestamps instead of inferring no_show.
+- Introduce background job or cron-based status updater.
+- Add configurable tolerance window.
+- Track check-in timestamps instead of inferring no_show.
 
 ### CLI UX
-- [ ] Add interactive mode (prompt-based input).
-- [ ] Improve error messages with actionable hints.
-- [ ] Add filtering and pagination to list commands.
-- [ ] Export results (JSON / CSV).
+- Add interactive mode (prompt-based input).
+- Improve error messages with actionable hints.
+- Add filtering and pagination to list commands.
+- Export results (JSON / CSV).
 
 ### Architecture
-- [ ] Introduce repository pattern for better testability.
-- [ ] Add dependency injection for services.
-- [ ] Split domain logic into smaller bounded contexts.
+- Introduce repository pattern for better testability.
+- Add dependency injection for services.
+- Split domain logic into smaller bounded contexts.
 
 ### Testing
-- [ ] Add unit tests for services.
-- [ ] Add integration tests with a test database.
-- [ ] Mock DB layer for faster testing.
+- Improve unit tests for services.
+- Add integration tests with a test database.
+- Mock DB layer for faster testing.
 
 ### Observability
-- [ ] Add structured logging.
-- [ ] Add metrics (basic usage tracking).
-- [ ] Improve error handling strategy (avoid log.Fatal in lower layers).
+- Add structured logging.
+- Add metrics (basic usage tracking).
+- Improve error handling strategy (avoid log.Fatal in lower layers).
 
 ### API Layer (Future Expansion)
-- [ ] Expose functionality via REST API.
-- [ ] Add authentication layer.
-- [ ] Support multi-user environments.
+- Expose functionality via REST API.
+- Add authentication layer.
+- Support multi-user environments.
+
+## UI Notice
+
+The basic UI layer of this CLI (terminal output formatting, styling, and tables) was generated with the assistance of AI tools.
+
+This includes:
+- Output structure and formatting decisions  
+- Styling definitions (colors, layout)  
+- Table rendering implementation  
+
+The core application logic, data model, and business rules were designed and implemented manually. AI was used strictly as a productivity aid for non-critical presentation concerns.
